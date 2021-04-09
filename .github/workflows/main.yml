@@ -22,6 +22,6 @@ jobs:
         run: yarn build-and-zip
 
       - name: Butler Push
-        run: butler push dist/game.zip fanlix/deploy-test:html5 --userversion VERSION
+        run: .\\tools\\butler push dist\\game.zip fanlix/deploy-test:html5 --userversion VERSION
         env: 
           BUTLER_API_KEY: ${{ secrets.BUTLER_CREDENTIALS }}
