@@ -7,8 +7,6 @@ const minifyCSS = require(`gulp-clean-css`);
 const preprocess = require(`gulp-preprocess`);
 const sourcemaps = require(`gulp-sourcemaps`);
 
-const express = require(`express`);
-const path = require(`path`);
 const minimist = require(`minimist`);
 
 const rollup = require(`rollup`);
@@ -27,7 +25,6 @@ var options = minimist(process.argv.slice(2), knownOptions);
 
 const devBuild = options.env === `development`;
 const preprocessContext = { DEBUG: true };
-const port = devBuild ? 1234 : 2345;
 const env = devBuild ? `debug` : `release`;
 
 //#region HTML
@@ -153,18 +150,6 @@ function buildJson()
 }
 //#endregion JSON
 
-function serve()
-{
-  var htdocs = path.resolve(__dirname, `./build/${ env }/www/`);
-  var app = express();
-
-  app.use(express.static(htdocs));
-  app.listen(port, function ()
-  {
-    console.log(`Server started on http://localhost:` + port);
-  });
-}
-
 function watch()
 {
   gulp.watch([`./src/res/*.png`], gulp.series(cleanPng, buildPng));
@@ -182,6 +167,4 @@ const build = exports.build =
       gulp.series(preprocessJs, rollupJs),
       buildCss));
 
-exports.watch = gulp.series(build, gulp.parallel(serve, watch));
-
-exports.serve = serve;
+exports.watch = gulp.series(build, watch);

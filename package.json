@@ -1,12 +1,18 @@
 {
   "name": "itch-io-html5-template",
   "version": "0.1.0-b1",
-  "main": "index.html",
+  "main": "server.js",
   "author": "David <davidbrad.015@gmail.com>",
   "license": "MIT",
   "scripts": {
     "install": ".\\tools\\7z\\7za x .\\tools.7z -otools -y",
     "uninstall": "yarn run rm-dist-folder && yarn run rm-build-folder && yarn run clean-up-modules && yarn run clean-up-tools",
+    "start-dev": "node server.js --env development",
+    "start-release": "node server.js",
+    "watch-dev": "gulp watch --env development",
+    "watch-release": "gulp watch",
+    "start": "concurrently --kill-others \"yarn run start-dev\" \"yarn run watch-dev\"",
+    "start:release": "concurrently --kill-others \"yarn run start-release\" \"yarn run watch-release\"",
     "clean-up-tools": "del /q .\\tools\\*.*",
     "clean-up-modules": "if exist node_modules rd /s /q node_modules",
     "rm-build-folder": "if exist build rd /s /q build",
@@ -17,8 +23,12 @@
     "zip": ".\\tools\\7z\\7za a -tzip dist\\game.zip dist\\src\\*.* && ./tools/ect-0.8.3.exe -9 -zip ./dist/game.zip",
     "build-and-zip": "yarn run rm-dist-folder && yarn run mk-dist-folder && yarn run build-source && yarn run inline-files && yarn run zip"
   },
-  "dependencies": {
+  "devDependencies": {
+    "concurrently": "^6.0.1",
     "express": "^4.17.1",
+    "path": "^0.12.7"
+  },
+  "dependencies": {
     "gulp": "^4.0.2",
     "gulp-clean": "^0.4.0",
     "gulp-clean-css": "^4.3.0",
@@ -31,7 +41,6 @@
     "gulp-typescript": "^6.0.0-alpha.1",
     "html-inline": "^1.2.0",
     "minimist": "^1.2.5",
-    "path": "^0.12.7",
     "rollup": "^2.36.1",
     "rollup-plugin-sourcemaps": "^0.6.3",
     "rollup-plugin-terser": "^7.0.2",
