@@ -1,0 +1,31 @@
+name: Push to itch.io
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Environment
+        run: yarn install
+        
+      - name: Build and Zip the Game
+        run: yarn zip
+
+      - name: Butler Push
+        uses: josephbmanley/butler-publish-itchio-action@v1.0.2
+        env:
+          BUTLER_CREDENTIALS: ${{ secrets.BUTLER_CREDENTIALS }}
+          CHANNEL: windows
+          ITCH_GAME: deploy-test
+          ITCH_USER: fanlix
+          PACKAGE: dist/game.zip
