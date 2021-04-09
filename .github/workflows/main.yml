@@ -19,13 +19,9 @@ jobs:
         run: yarn install
         
       - name: Build and Zip the Game
-        run: yarn zip
+        run: yarn build-and-zip
 
       - name: Butler Push
-        uses: josephbmanley/butler-publish-itchio-action@v1.0.2
-        env:
-          BUTLER_CREDENTIALS: ${{ secrets.BUTLER_CREDENTIALS }}
-          CHANNEL: windows
-          ITCH_GAME: deploy-test
-          ITCH_USER: fanlix
-          PACKAGE: dist/game.zip
+        run: butler push dist/game.zip fanlix/deploy-test:html5 --userversion VERSION
+        env: 
+          BUTLER_API_KEY: ${{ secrets.BUTLER_CREDENTIALS }}
