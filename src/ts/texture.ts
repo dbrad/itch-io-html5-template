@@ -1,4 +1,4 @@
-import { gl } from "./gl";
+import { gl_createTexture } from "./gl";
 
 export type Texture = {
   _atlas: WebGLTexture;
@@ -49,7 +49,7 @@ export function loadSpriteSheet(sheet: TextureAssetJson): Promise<void>
         canvas.width = image.width;
         canvas.height = image.height;
         canvas.getContext("2d")?.drawImage(image, 0, 0);
-        const glTexture: WebGLTexture = gl.createTexture(canvas);
+        const glTexture: WebGLTexture = gl_createTexture(canvas);
         ATLAS_CACHE.set(sheet.name, glTexture);
 
         for (const texture of sheet.textures)

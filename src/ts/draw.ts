@@ -1,6 +1,7 @@
+import { gl_pushTextureQuad, gl_restore, gl_save, gl_scale, gl_translate } from "./gl";
+
 import { TEXTURE_CACHE } from "./texture";
 import { assert } from "./debug";
-import { gl } from "./gl";
 
 export function pushSprite(textureName: string, x: number, y: number, colour: number = 0xFFFFFFFF, sx: number = 1, sy: number = 1): void
 {
@@ -8,15 +9,15 @@ export function pushSprite(textureName: string, x: number, y: number, colour: nu
   // @ifdef DEBUG
   if (!t) throw new Error(`No such texture as ${ textureName }`);
   // @endif
-  gl.translate(x, y);
-  gl.push(t._atlas, 0, 0, t.w * sx, t.h * sy, t.u0, t.v0, t.u1, t.v1, colour);
+  gl_translate(x, y);
+  gl_pushTextureQuad(t._atlas, 0, 0, t.w * sx, t.h * sy, t.u0, t.v0, t.u1, t.v1, colour);
 }
 
 export function pushSpriteAndSave(textureName: string, x: number, y: number, colour: number = 0xFFFFFFFF, sx: number = 1, sy: number = 1): void
 {
-  gl.save();
+  gl_save();
   pushSprite(textureName, x, y, colour, sx, sy);
-  gl.restore();
+  gl_restore();
 }
 
 export function pushQuad(x: number, y: number, w: number, h: number, colour: number = 0xFFFFFFFF): void
@@ -25,10 +26,10 @@ export function pushQuad(x: number, y: number, w: number, h: number, colour: num
   // @ifdef DEBUG
   if (!t) throw new Error(`No such texture as flat`);
   // @endif
-  gl.save();
-  gl.translate(x, y);
-  gl.push(t._atlas, 0, 0, w, h, t.u0, t.v0, t.u1, t.v1, colour);
-  gl.restore();
+  gl_save();
+  gl_translate(x, y);
+  gl_pushTextureQuad(t._atlas, 0, 0, w, h, t.u0, t.v0, t.u1, t.v1, colour);
+  gl_restore();
 }
 
 export const enum Align
@@ -57,7 +58,7 @@ export function textHeight(lineCount: number, scale: number): number
   return (fontSize * scale + scale) * lineCount;
 }
 
-function parseText(text: string, params: TextParams = { colour: 0xFFFFFFFF, textAlign: Align.Left, scale: 1, wrap: 0 }): number
+export function parseText(text: string, params: TextParams = { colour: 0xFFFFFFFF, textAlign: Align.Left, scale: 1, wrap: 0 }): number
 {
   params.colour = params.colour || 0xFFFFFFFF;
   params.textAlign = params.textAlign || Align.Left;
@@ -145,11 +146,11 @@ export function pushText(text: string, x: number, y: number, params: TextParams 
           throw new Error(`No such texture as ${ letter }`);
         }
         // @endif
-        gl.save();
-        gl.translate(x, y); // translate by the real x,y
-        gl.scale(params.scale, params.scale); // scale up the matrix
-        gl.push(t._atlas, 0, 0, t.w, t.h, t.u0, t.v0, t.u1, t.v1, params.colour);
-        gl.restore();
+        gl_save();
+        gl_translate(x, y); // translate by the real x,y
+        gl_scale(params.scale, params.scale); // scale up the matrix
+        gl_pushTextureQuad(t._atlas, 0, 0, t.w, t.h, t.u0, t.v0, t.u1, t.v1, params.colour);
+        gl_restore();
         offx += letterSize;
       }
       offx += letterSize;
