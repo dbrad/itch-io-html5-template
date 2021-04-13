@@ -36,14 +36,13 @@ window.addEventListener(`load`, async () =>
       moveNode(childId, i.values as v2);
       if (i.done)
       {
-        console.log("INTERP DONE")
         moveNode(childId, i.values as v2);
         node_movement.delete(childId);
       }
     }
     currentSceneRootId = getSceneRootId(CurrentScene);
     mainMenuScene(now, delta);
-    renderNode(currentSceneRootId);
+    renderNode(currentSceneRootId, now, delta);
 
     gl_flush();
     window.requestAnimationFrame(loop);

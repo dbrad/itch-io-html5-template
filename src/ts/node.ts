@@ -1,4 +1,4 @@
-import { Align, parseText, pushQuad, pushText, textHeight, textWidth } from "./draw";
+import { Align, parseText, pushQuad, pushSprite, pushSpriteAndSave, pushText, textHeight, textWidth } from "./draw";
 import { Easing, InterpolationData, createInterpolationData } from "./interpolate";
 import { gl_restore, gl_save, gl_translate } from "./gl";
 
@@ -8,7 +8,8 @@ import { v2 } from "./v2";
 export const enum TAG
 {
   NONE,
-  TEXT
+  TEXT,
+  SPRITE
 }
 
 //#region Base Node Data
@@ -23,15 +24,15 @@ export const node_tags: TAG[] = [];
 export const node_visible: boolean[] = [];
 export const node_parent: number[] = [0];
 export const node_children: number[][] = [[]];
+
 //#endregion Base Node Data
 
-//#region Text Node Data
+//#region Extended Node Data
 export const node_text: string[] = [];
 export const node_text_align: Align[] = [];
-export const node_text_scale: number[] = [];
-export const node_text_shadow: boolean[] = [];
+export const node_drop_shadow: boolean[] = [];
 
-//#endregion Text Node Data
+//#endregion Extended Node Data
 
 //#region Base Node
 export function createNode(): number
@@ -100,7 +101,7 @@ export function nodeSize(nodeId: number): v2
   return [size[0] * scale, size[1] * scale];
 }
 
-export function renderNode(nodeId: number): void
+export function renderNode(nodeId: number, now: number, delta: number): void
 {
   if (node_enabled[nodeId])
   {
@@ -115,6 +116,9 @@ export function renderNode(nodeId: number): void
       {
         case TAG.TEXT:
           renderTextNode(nodeId);
+          break;
+        case TAG.SPRITE:
+          renderSprite(nodeId, delta);
           break;
         case TAG.NONE:
         default:
@@ -131,7 +135,7 @@ export function renderNode(nodeId: number): void
 
     for (let childId of node_children[nodeId])
     {
-      renderNode(childId);
+      renderNode(childId, now, delta);
     }
     gl_restore();
   }
@@ -141,32 +145,95 @@ export function renderNode(nodeId: number): void
 //#region Text Node
 export function createTextNode(text: string, scale: number = 1, align: Align = Align.Left, shadow: boolean = false): number
 {
-  const node = createNode();
-  node_tags[node] = TAG.TEXT;
-  updateTextNode(node, text, scale, align, shadow);
-  return node;
+  const nodeId = createNode();
+  node_tags[nodeId] = TAG.TEXT;
+  updateTextNode(nodeId, text, scale, align, shadow);
+  return nodeId;
 }
 
-export function updateTextNode(node: number, text: string, scale: number = 1, align: Align = Align.Left, shadow: boolean = false): void
+export function updateTextNode(nodeId: number, text: string, scale: number = 1, align: Align = Align.Left, shadow: boolean = false): void
 {
   const lines = parseText(text);
   const width = textWidth(text.length, scale);
   const height = textHeight(lines, scale);
-  node_size[node] = [width, height];
-  node_text_align[node] = align;
-  node_text_shadow[node] = shadow;
-  node_text_scale[node] = scale;
-  node_text[node] = text;
+  node_size[nodeId] = [width, height];
+  node_text_align[nodeId] = align;
+  node_drop_shadow[nodeId] = shadow;
+  node_scale[nodeId] = scale;
+  node_text[nodeId] = text;
 }
 
 function renderTextNode(nodeId: number): void
 {
-  const scale = node_text_scale[nodeId];
+  const scale = node_scale[nodeId];
   const textAlign = node_text_align[nodeId];
-  if (node_text_shadow[nodeId])
+  if (node_drop_shadow[nodeId])
   {
     pushText(node_text[nodeId], scale, scale, { scale, textAlign, colour: 0xFF000000 });
   }
   pushText(node_text[nodeId], 0, 0, { scale, textAlign });
 }
 //#endregion Text Node
+
+export type Frame = { spriteName: string, duration: number }
+const node_sprite_frames: Map<number, Frame[]> = new Map();
+const node_sprite_timestamp: number[] = [];
+const node_sprite_duration: number[] = [];
+export function createSprite(frames: Frame[], scale: number = 1, shadow: boolean = false): number
+{
+  const nodeId = createNode();
+
+  node_tags[nodeId] = TAG.SPRITE;
+
+  node_scale[nodeId] = scale;
+  node_drop_shadow[nodeId] = shadow;
+
+  node_sprite_frames.set(nodeId, frames);
+  let duration = 0;
+  for (const frame of frames)
+  {
+    duration += frame.duration;
+  }
+
+  node_sprite_duration[nodeId] = duration;
+  node_sprite_timestamp[nodeId] = 0;
+
+  return nodeId;
+}
+
+function renderSprite(nodeId: number, delta: number): void
+{
+  const scale = node_scale[nodeId];
+  const duration = node_sprite_duration[nodeId];
+  const frames = node_sprite_frames.get(nodeId);
+
+  if (frames)
+  {
+    if (duration > 0)
+    {
+      node_sprite_timestamp[nodeId] += delta;
+      if (node_sprite_timestamp[nodeId] > duration)
+      {
+        node_sprite_timestamp[nodeId] = 0;
+      }
+    }
+
+    let currentFrame = frames[0];
+    let totalDuration: number = 0;
+    for (const frame of frames)
+    {
+      totalDuration += frame.duration;
+      if (node_sprite_timestamp[nodeId] <= totalDuration)
+      {
+        currentFrame = frame;
+        break;
+      }
+    }
+
+    if (node_drop_shadow[nodeId])
+    {
+      pushSpriteAndSave(currentFrame.spriteName, scale, scale, 0xFF000000, scale, scale);
+    }
+    pushSprite(currentFrame.spriteName, 0, 0, 0xFFFFFFFFFF, scale, scale);
+  }
+}
